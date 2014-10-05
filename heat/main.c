@@ -41,10 +41,10 @@ int main(int argc, char** argv) {
  
   if (rank == 0) {
     fprintf(stderr, "{main}==>right before print\n");
-    printTemperatureNet(solution, N);
+    printTemperatureNet(solution, N+1, N+1);
     int i=0;
     for (i=0;i<N+1;i++) {
-      fprintf(stderr, "{main}==>column %d freed\n", i);
+//      fprintf(stderr, "{main}==>column %d freed\n", i);
       free(solution[i]);
     }
     fprintf(stderr, "{main}==>net freed\n");
