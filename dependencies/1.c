@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 int main(int argc, char **argv) {
 
@@ -24,6 +25,8 @@ int main(int argc, char **argv) {
     }
   }
 
+  clock_t t1=clock();
+
   // Parallelize
   for (i = 0; i < N; ++i) {
     for (j = 0; j < N; ++j) {
@@ -31,9 +34,11 @@ int main(int argc, char **argv) {
     }
   }
 
+  clock_t t2=clock();
+  printf("%.3f\n", (float)(t2-t1)/CLOCKS_PER_SEC);
 
   if (write) {
-    ff = fopen("./data/1.txt", "w");
+    ff = fopen("1.txt", "w");
     for (i = 0; i < N; ++i) {
       for (j = 0; j < N; ++j) {
         fprintf(ff, "%f ", a[i][j]);

@@ -1,5 +1,5 @@
-#include <pthread.h>
 #include <stdio.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
@@ -8,54 +8,56 @@ int task(int n, int m, int k) {
   return ((n-k) % m == 0) ? ((n-k)/m) : ((n-k)/m + 1);
 }
 
-typedef struct {
+typedef struct arguments {
   double** a;
-  int start;
-  int end;
-  int N;
+  int Ni;
+  int Nj;
 } arguments;
 
 void foo(arguments* args) {
   int i,j;
-  for (i = args->start; i < args->end; ++i) {
-    for (j = 0; j < args->N; ++j) {
-      args->a[i][j] = sin(0.00001 * args->a[i][j]);
+  double** d = args->a;
+  for (i = 0; i < args->Ni; ++i) {
+    for (j = 0; j < args->Nj; ++j) {
+      d[i][j] = sin(0.00001 * d[i][j]);
     }
   }
+  pthread_exit(NULL);
 }
 
 int main(int argc, char **argv) {
 
   if ( argc != 4 ) {
     fprintf(stderr, "Usage: $ ./a.out n_of_processes N write\n");
-    return 0; 
+    return 0;
   }
 
   int i, j, np = atoi(argv[1]),
       N = atoi(argv[2]), write = atoi(argv[3]);
   FILE *ff;
-  double** a = (double**)malloc(sizeof(double*)*N);
-  for (i = 0; i < N; ++i) {
-    a[i] = (double*)malloc(sizeof(double)*N);
-  }
+
   pthread_t* threads = (pthread_t*)malloc(sizeof(pthread_t)*np);
 
-  // Initialization
-  for (i = 0; i < N; ++i) {
-    for (j = 0; j < N; ++j) {
-      a[i][j] = 10 * i + j;
+  //Prepare the tasks
+  arguments* tasks = (arguments*)malloc(sizeof(arguments)*np);
+  for (i=0;i<np;i++){
+    tasks[i].Ni = task(N, np, i);
+    tasks[i].Nj = N;
+    tasks[i].a = (double**)malloc(sizeof(double*)*tasks[i].Ni);
+    for (j=0;j<tasks[i].Ni;j++) {
+      tasks[i].a[j] = (double*)malloc(sizeof(double)*tasks[i].Nj);
     }
   }
 
-  //Prepare the tasks
-  int buf = 0;
-  arguments* tasks = (arguments*)malloc(sizeof(arguments)*np);
-  for (i = 0; i < np; ++i) {
-    tasks[i].a = a;
-    tasks[i].start = buf;
-    tasks[i].end = buf+task(N, np, i);
-    tasks[i].N = N; 
-    buf += task(N, np, i);
+  // Initialization
+  int k=0, buf=0;
+  for (k = 0; k < np; ++k) {
+    for (i = 0; i < tasks[k].Ni; ++i) {
+      for (j = 0; j < tasks[k].Nj; ++j) {
+        tasks[k].a[i][j] = 10 * (i+buf) + j;
+      }
+    }
+    buf += tasks[k].Ni;
   }
 
   clock_t t1=clock();
@@ -82,21 +84,24 @@ int main(int argc, char **argv) {
 
   if (write) {
     ff = fopen("par-1.txt", "w");
-    for (i = 0; i < N; ++i) {
-      for (j = 0; j < N; ++j) {
-        fprintf(ff, "%f ", a[i][j]);
+    for (i = 0; i < np; ++i) {
+      for (j = 0; j < tasks[i].Ni; ++j) {
+        for (k = 0; k < tasks[i].Nj; ++k) {
+          fprintf(ff, "%f ", tasks[i].a[j][k]);
+        }
+        fprintf(ff, "\n");
       }
-      fprintf(ff, "\n");
     }
     fclose(ff);
   }
 
-  for (i = 0; i < N; ++i) {
-    free(a[i]);
-  }
-  free(a);
-
   free(threads);
+  for (i=0;i<np;i++){
+    for (j=0;j<tasks[i].Ni;j++) {
+      free(tasks[i].a[j]);
+    }
+    free(tasks[i].a);
+  }
   free(tasks);
   return 0;
 }
