@@ -19,10 +19,11 @@ void printTemperatureNet(double** u, int nx, int ny) {
   int i=0, j=0;
   for (j=0;j<ny;j++) {
     for (i=0;i<nx;i++) {
-      fprintf(stderr, "(%2.3f) ", u[i][j]);
+      printf("(%2.3f) ", u[i][j]);
     }
-    fprintf(stderr, "\n");
+    printf("\n");
   }
+  fflush(stdout);
 }
 
 double** allocNet(int nx, int ny) {
