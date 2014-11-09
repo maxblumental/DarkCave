@@ -10,16 +10,21 @@ if ! [ -d data ] ; then
   mkdir data
 fi
 
+#pthread build
 for I in 1 4
 do
   gcc -Werror $I.c -lm -o ./bin/$I.out
   gcc -Werror -pthread parallel-$I.c -lm -o ./bin/parallel-$I.out
 done
 
-#Compare scalar and parallel versions
+#OpenMP build
+gcc -Werror 3.c -lm -o ./bin/3.out
+gcc -Werror -fopenmp parallel-3.c -lm -o ./bin/parallel-3.out
+
+#Compare simple and parallel versions
 echo "[2]Comparison tests..."
 
-for I in 1 4
+for I in 1 3 4
 do
   ./bin/$I.out 100 1 &> /dev/null
   ./bin/parallel-$I.out 4 100 1 &> /dev/null
@@ -30,7 +35,7 @@ done
 
 N=10000
 echo "[3]Acceleration test for N ="$N"..."
-for I in 1 4
+for I in 1 3 4
 do
   time_ref=`bin/$I.out $N 0`
   pow=2
