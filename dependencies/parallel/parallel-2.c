@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <mpi.h>
 
 int main(int argc, char **argv) {
+
+  MPI_Initialize();
 
   if ( argc != 3 ) {
     fprintf(stderr, "Usage: $ ./a.out N write\n");
@@ -52,6 +55,8 @@ int main(int argc, char **argv) {
     free(a[i]);
   }
   free(a);
+
+  MPI_Finilize();
 
   return 0;
 }
