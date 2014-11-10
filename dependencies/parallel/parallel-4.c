@@ -1,4 +1,3 @@
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -8,7 +7,7 @@ int task(int n, int m, int k) {
   return ((n-k) % m == 0) ? ((n-k)/m) : ((n-k)/m + 1);
 }
 
-typedef struct {
+typedef struct arguments {
   double** a;
   int start;
   int end;
@@ -18,8 +17,8 @@ typedef struct {
 void foo(arguments* args) {
   int i,j;
   for (i = args->start; i < args->end; ++i) {
-    for (j = 0; j < args->N; ++j) {
-      args->a[i][j] = sin(0.00001 * args->a[i][j]);
+    for (j = 0; j < args->N-2; ++j) {
+      args->a[i][j] = sin(0.00001 * args->a[i][j+2]);
     }
   }
 }
@@ -58,7 +57,10 @@ int main(int argc, char **argv) {
     buf += task(N, np, i);
   }
 
-  clock_t t1=clock();
+  struct timespec start, finish;
+  double elapsed;
+
+  clock_gettime(CLOCK_MONOTONIC, &start);
 
   // Parallelize
   for (i = 0; i < np; ++i) {
@@ -77,11 +79,15 @@ int main(int argc, char **argv) {
     }
   }
 
-  clock_t t2=clock();
-  printf("%.3f\n", (float)(t2-t1)/CLOCKS_PER_SEC);
+  clock_gettime(CLOCK_MONOTONIC, &finish);
+
+  elapsed = (finish.tv_sec - start.tv_sec);
+  elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+
+  printf("%lf\n", elapsed);
 
   if (write) {
-    ff = fopen("par-1.txt", "w");
+    ff = fopen("par-4.txt", "w");
     for (i = 0; i < N; ++i) {
       for (j = 0; j < N; ++j) {
         fprintf(ff, "%f ", a[i][j]);

@@ -7,7 +7,7 @@ int main(int argc, char **argv) {
 
   if ( argc != 3 ) {
     fprintf(stderr, "Usage: $ ./a.out N write\n");
-    return 0; 
+    return 0;
   }
 
   int i, j, N = atoi(argv[1]),
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     }
     fclose(ff);
   }
-  
+
   for (i = 0; i < N; ++i) {
     free(a[i]);
   }

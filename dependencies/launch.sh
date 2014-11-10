@@ -13,13 +13,13 @@ fi
 #pthread build
 for I in 1 4
 do
-  gcc -Werror $I.c -lm -o ./bin/$I.out
-  gcc -Werror -pthread parallel-$I.c -lm -o ./bin/parallel-$I.out
+  gcc -Werror ./simple/$I.c -lm -o ./bin/$I.out
+  gcc -Werror -pthread ./parallel/parallel-$I.c -lm -o ./bin/parallel-$I.out
 done
 
 #OpenMP build
-gcc -Werror 3.c -lm -o ./bin/3.out
-gcc -Werror -fopenmp parallel-3.c -lm -o ./bin/parallel-3.out
+gcc -Werror ./simple/3.c -lm -o ./bin/3.out
+gcc -Werror -fopenmp ./parallel/parallel-3.c -lm -o ./bin/parallel-3.out
 
 #Compare simple and parallel versions
 echo "[2]Comparison tests..."
@@ -39,15 +39,33 @@ for I in 1 3 4
 do
   time_ref=`bin/$I.out $N 0`
   pow=2
-  while [ $pow -lt 8 ]
+  while [ $pow -lt 64 ]
   do
-    time=`bin/parallel-$I.out $pow $N 0`
-    acc=`bc <<< 'scale=3; '$time_ref'/'$time`
-    echo $pow" "$acc >> time_data
+    exec_time=0
+    count=0
+    avg=10
+    while [ $count -lt $avg ]; do
+      var=`bin/parallel-$I.out $pow $N 0`
+      exec_time=`bc <<< 'scale=3; '$exec_time'+'$var`
+      count=$((count+1))
+    done
+    acc=`bc <<< 'scale=3; '$time_ref'*'$avg'/'$exec_time`
+    echo $pow" "$acc >> acceleration
     pow=$((pow*2))
   done
   echo -e "\nfor $I.c:\nn, accel"
-  cat time_data
-  mv time_data data/time_data_$I
+  cat acceleration
+
+gnuplot <<- EOF
+    set xlabel "np"
+    set ylabel "acceleration"
+    set term png
+    set output "acceleration_${I}.png"
+    plot "acceleration" with lines title "${I}.c"
+    exit
+EOF
+
+  mv acceleration data/acceleration_$I
   echo -e "\n"
 done
+mv *.png data/

@@ -1,1 +1,1 @@
-rm -rf *.txt *.out *.s .*.swp .*.swo bin/ data/
+rm -rf *.txt *.out *.s .*.swp .*.swo bin/ data/ *.png
