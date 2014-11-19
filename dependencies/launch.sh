@@ -18,13 +18,16 @@ do
 done
 
 #OpenMP build
-gcc -Werror ./simple/3.c -lm -o ./bin/3.out
-gcc -Werror -fopenmp ./parallel/parallel-3.c -lm -o ./bin/parallel-3.out
+for I in 3 6
+do
+  gcc -Werror ./simple/$I.c -lm -o ./bin/$I.out
+  gcc -Werror -fopenmp ./parallel/parallel-$I.c -lm -o ./bin/parallel-$I.out
+done
 
 #Compare simple and parallel versions
 echo "[2]Comparison tests..."
 
-for I in 1 3 4
+for I in 1 3 4 6
 do
   ./bin/$I.out 100 1 &> /dev/null
   ./bin/parallel-$I.out 4 100 1 &> /dev/null
@@ -35,15 +38,15 @@ done
 
 N=10000
 echo "[3]Acceleration test for N ="$N"..."
-for I in 1 3 4
+for I in 1 3 4 6
 do
   time_ref=`bin/$I.out $N 0`
   pow=2
-  while [ $pow -lt 64 ]
+  while [ $pow -lt 8 ]
   do
     exec_time=0
     count=0
-    avg=10
+    avg=2
     while [ $count -lt $avg ]; do
       var=`bin/parallel-$I.out $pow $N 0`
       exec_time=`bc <<< 'scale=3; '$exec_time'+'$var`
