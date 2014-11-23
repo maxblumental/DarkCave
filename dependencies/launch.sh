@@ -24,6 +24,13 @@ do
   gcc -Werror -fopenmp ./parallel/parallel-$I.c -lm -o ./bin/parallel-$I.out
 done
 
+#MPI build
+for I in 2
+do
+  gcc -Werror ./simple/$I.c -lm -o ./bin/$I.out
+  mpicc -Werror ./parallel/parallel-$I.c -lm -o ./bin/parallel-$I.out
+done
+
 #Compare simple and parallel versions
 echo "[2]Comparison tests..."
 
@@ -36,9 +43,18 @@ do
   echo "The difference for $I.c (must be empty): "$difference
 done
 
+for I in 2
+do
+  ./bin/$I.out 100 1 &> /dev/null
+  mpirun -n 4 ./bin/parallel-$I.out 100 1 &> /dev/null
+  mv $I.txt par-$I.txt data
+  difference=`diff data/$I.txt data/par-$I.txt`
+  echo "The difference for $I.c (must be empty): "$difference
+done
+
 N=10000
-echo "[3]Acceleration test for N ="$N"..."
-for I in 1 3 4 6
+echo "[3]Acceleration test for N =$N..."
+for I in 1 2 3 4 6
 do
   time_ref=`bin/$I.out $N 0`
   pow=2
@@ -48,7 +64,12 @@ do
     count=0
     avg=2
     while [ $count -lt $avg ]; do
-      var=`bin/parallel-$I.out $pow $N 0`
+      if [ $I -eq 2 ] || [ $I -eq 5 ];
+      then
+        var=`mpirun -n $pow bin/parallel-$I.out $N 0`
+      else
+        var=`bin/parallel-$I.out $pow $N 0`
+      fi
       exec_time=`bc <<< 'scale=3; '$exec_time'+'$var`
       count=$((count+1))
     done

@@ -8,17 +8,6 @@ int task(int n, int m, int k) {
   return ((n-k) % m == 0) ? ((n-k)/m) : ((n-k)/m + 1);
 }
 
-void printTemperatureNet(double** u, int nx, int ny) {
-  int i=0, j=0;
-  for (i=0;i<nx;i++) {
-    for (j=0;j<ny;j++) {
-      printf("(%2.3f) ", u[i][j]);
-    }
-    printf("\n");
-  }
-  fflush(stdout);
-}
-
 int main(int argc, char **argv) {
 
   MPI_Init(NULL,NULL);
@@ -35,57 +24,33 @@ int main(int argc, char **argv) {
  
   int i, j, N = atoi(argv[1]),
       write = atoi(argv[2]);
-  int my_task = task(N, size, rank),
+  int my_task = task(N-1, size, rank),
       offset = 0;
   for (i = 0; i < rank; ++i)
-    offset += task(N, size, i);
-  printf("My rank is %d and it's %d\n", rank, my_task); 
+    offset += task(N-1, size, i);
 
   // Memory allocation - rank-driven
   double** a;
-  double** b;
   if (rank==0) {
     a = (double**)malloc(sizeof(double*)*N);
-    b = (double**)malloc(sizeof(double*)*N);
     for (i = 0; i < N; ++i) {
       a[i] = (double*)malloc(sizeof(double)*N);
-      b[i] = (double*)malloc(sizeof(double)*N);
     }
     for (i = 0; i < N; ++i) {
-      for (j = 0; j < my_task+1; ++j) {
+      for (j = 0; j < N; ++j) {
         a[i][j] = 10 * i + j;
-        b[i][j] = 10 * i + j;
       }
     }
-// printTemperatureNet(a, N, N);
-  } else if (rank==size-1) {
-    a = (double**)malloc(sizeof(double*)*N);
-    b = (double**)malloc(sizeof(double*)*N);
-    for (i = 0; i < N; ++i) {
-      a[i] = (double*)malloc(sizeof(double)*my_task);
-      b[i] = (double*)malloc(sizeof(double)*my_task);
-    }
-    for (i = 0; i < N; ++i) {
-      for (j = 0; j < my_task; ++j) {
-        a[i][j] = 10 * i + (j+offset);
-        b[i][j] = 10 * i + (j+offset);
-      }
-    }
-// printTemperatureNet(a, N, my_task);
   } else {
     a = (double**)malloc(sizeof(double*)*N);
-    b = (double**)malloc(sizeof(double*)*N);
     for (i = 0; i < N; ++i) {
       a[i] = (double*)malloc(sizeof(double)*(my_task+1));
-      b[i] = (double*)malloc(sizeof(double)*(my_task+1));
     }
     for (i = 0; i < N; ++i) {
       for (j = 0; j < my_task+1; ++j) {
         a[i][j] = 10 * i + (j+offset);
-        b[i][j] = 10 * i + (j+offset);
       }
     }
-// printTemperatureNet(a, N, my_task+1);
   }
   FILE *ff;
 
@@ -98,22 +63,55 @@ int main(int argc, char **argv) {
   if (rank==0) {
     for (i = 1; i < N; ++i) {
       for (j = 0; j < my_task; ++j) {
-        a[i][j] = sin(0.00001 * b[i - 1][j + 1]);
+        if (i > 1 && j == my_task - 1 && size > 1)
+          MPI_Recv((void*)(a[i-1]+my_task), 1, MPI_DOUBLE, 1,
+                   0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        a[i][j] = sin(0.00001 * a[i - 1][j + 1]);
       }
     }
   } else if (rank==size-1) {
     for (i = 1; i < N; ++i) {
-      for (j = 0; j < my_task-1; ++j) {
-        a[i][j] = sin(0.00001 * b[i - 1][j + 1]);
+      for (j = 0; j < my_task; ++j) {
+       a[i][j] = sin(0.00001 * a[i - 1][j + 1]);
+       if (i < N-1 && j == 0 )
+          MPI_Send((void*)a[i], 1, MPI_DOUBLE,
+                   rank-1, 0, MPI_COMM_WORLD);
       }
     }
+/*  } else if (rank % 2 == 1) {
+    for (i = 1; i < N; ++i) {
+      for (j = 0; j < my_task; ++j) {
+        if (i < N-1 && j == 1) {
+          MPI_Send((void*)a[i], 1, MPI_DOUBLE,
+                   rank-1, 0, MPI_COMM_WORLD);
+        } else if (i < N-1 && my_task == 1) {
+          MPI_Send((void*)a[i-1], 1, MPI_DOUBLE,
+                   rank-1, 0, MPI_COMM_WORLD);
+        }
+        a[i][j] = sin(0.00001 * a[i - 1][j + 1]);
+        if (i > 1 && my_task > 1 && j == my_task - 2) {
+          MPI_Recv((void*)(a[i-1]+my_task), 1, MPI_DOUBLE, rank+1,
+                   0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        } else if (i > 1 && my_task == 1) {
+          MPI_Recv((void*)(a[i]+my_task), 1, MPI_DOUBLE, rank+1,
+                   0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+      }
+    }*/
   } else {
     for (i = 1; i < N; ++i) {
       for (j = 0; j < my_task; ++j) {
-        a[i][j] = sin(0.00001 * b[i - 1][j + 1]);
+        if (i > 1 && j == my_task - 1)
+          MPI_Recv((void*)(a[i-1]+my_task), 1, MPI_DOUBLE, rank+1,
+                   0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        a[i][j] = sin(0.00001 * a[i - 1][j + 1]);
+        if (i < N-1 && j == 0)
+          MPI_Send((void*)a[i], 1, MPI_DOUBLE,
+                   rank-1, 0, MPI_COMM_WORLD);
       }
     }
   }
+
 
   if (rank>0) {
     for (i=0;i<N;i++)
@@ -124,20 +122,19 @@ int main(int argc, char **argv) {
     int disp=0;
     int taski=0;
     for (i=1;i<size;i++) {
-      taski=task(N, size, i);
+      taski=task(N-1, size, i);
       for (j=0;j<N;j++){
         MPI_Recv((void*)(a[j]+disp+my_task), taski, MPI_DOUBLE, i,
                  0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       }
-      disp+=task(N, size, i);
+      disp+=task(N-1, size, i);
     }
- printTemperatureNet(a, N, N);
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
   if (rank==0) {
     end=MPI_Wtime();
-    printf("time=%lf sec\n", end-start);
+    printf("%lf\n", end-start);
 
     if (write) {
       ff = fopen("par-2.txt", "w");
@@ -154,10 +151,8 @@ int main(int argc, char **argv) {
   // Memory deallocation - rank-driven
   for (i = 0; i < N; ++i) {
     free(a[i]);
-    free(b[i]);
   }
   free(a);
-  free(b);
 
   MPI_Finalize();
 
