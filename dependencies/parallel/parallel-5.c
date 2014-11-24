@@ -24,10 +24,10 @@ int main(int argc, char **argv) {
  
   int i, j, N = atoi(argv[1]),
       write = atoi(argv[2]);
-  int my_task = task(N-1, size, rank),
-      offset = 0;
+  int my_task = task(N-2, size, rank),
+      offset = 2;
   for (i = 0; i < rank; ++i)
-    offset += task(N-1, size, i);
+    offset += task(N-2, size, i);
 
   // Memory allocation - rank-driven
   double** a;
@@ -61,10 +61,10 @@ int main(int argc, char **argv) {
 
   // Parallelize
   for (i = 1; i < N; ++i) {
-    for (j = 0; j < my_task+1; ++j) {
+    for (j = 2; j < my_task+1; ++j) {
       if (rank==size-1 && j==my_task)
         continue;
-      a[i][j] = sin(0.00001 * a[i - 1][j + 1]);
+      a[i][j] = sin(0.00001 * a[i - 1][j - 2]);
     }
     MPI_Barrier(MPI_COMM_WORLD);
   }
@@ -80,12 +80,12 @@ int main(int argc, char **argv) {
     int disp=0;
     int taski=0;
     for (i=1;i<size;i++) {
-      taski=task(N-1, size, i);
+      taski=task(N-2, size, i);
       for (j=0;j<N;j++){
         MPI_Recv((void*)(a[j]+disp+my_task), taski, MPI_DOUBLE, i,
                  0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       }
-      disp+=task(N-1, size, i);
+      disp+=task(N-2, size, i);
     }
   }
 
@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
     printf("%lf\n", end-start);
 
     if (write) {
-      ff = fopen("par-2.txt", "w");
+      ff = fopen("par-5.txt", "w");
       for (i = 0; i < N; ++i) {
         for (j = 0; j < N; ++j) {
           fprintf(ff, "%f ", a[i][j]);
