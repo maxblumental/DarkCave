@@ -44,11 +44,15 @@ int main(int argc, char **argv) {
   } else {
     a = (double**)malloc(sizeof(double*)*N);
     for (i = 0; i < N; ++i) {
-      a[i] = (double*)malloc(sizeof(double)*(my_task+1));
+      a[i] = (double*)malloc(sizeof(double)*(my_task+2));
     }
     for (i = 0; i < N; ++i) {
-      for (j = 0; j < my_task+1; ++j) {
-        a[i][j] = 10 * i + (j+offset);
+      for (j = 0; j < my_task+2; ++j) {
+        if (i > 0 && j < 2) {
+          a[i][j] = sin(0.00001 * (10 * i + (j+offset-2)));
+          continue;
+        }
+        a[i][j] = 10 * i + (j+offset-2);
       }
     }
   }
@@ -61,9 +65,7 @@ int main(int argc, char **argv) {
 
   // Parallelize
   for (i = 1; i < N; ++i) {
-    for (j = 2; j < my_task+1; ++j) {
-      if (rank==size-1 && j==my_task)
-        continue;
+    for (j = 2; j < my_task+2; ++j) {
       a[i][j] = sin(0.00001 * a[i - 1][j - 2]);
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -73,11 +75,11 @@ int main(int argc, char **argv) {
 
   if (rank>0) {
     for (i=0;i<N;i++)
-      MPI_Send((void*)a[i], my_task, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+      MPI_Send((void*)(a[i]+2), my_task, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
   }
   
   if (rank==0) {
-    int disp=0;
+    int disp=2;
     int taski=0;
     for (i=1;i<size;i++) {
       taski=task(N-2, size, i);

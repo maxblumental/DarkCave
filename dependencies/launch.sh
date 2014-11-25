@@ -25,7 +25,7 @@ do
 done
 
 #MPI build
-for I in 2
+for I in 2 5
 do
   gcc -Werror ./simple/$I.c -lm -o ./bin/$I.out
   mpicc -Werror ./parallel/parallel-$I.c -lm -o ./bin/parallel-$I.out
@@ -43,7 +43,7 @@ do
   echo "The difference for $I.c (must be empty): "$difference
 done
 
-for I in 2
+for I in 2 5
 do
   ./bin/$I.out 100 1 &> /dev/null
   mpirun -n 4 ./bin/parallel-$I.out 100 1 &> /dev/null
@@ -54,7 +54,7 @@ done
 
 N=10000
 echo "[3]Acceleration test for N =$N..."
-for I in 1 2 3 4 6
+for I in 1 2 3 4 5 6
 do
   time_ref=`bin/$I.out $N 0`
   pow=2
@@ -62,7 +62,7 @@ do
   do
     exec_time=0
     count=0
-    avg=2
+    avg=10
     while [ $count -lt $avg ]; do
       if [ $I -eq 2 ] || [ $I -eq 5 ];
       then
