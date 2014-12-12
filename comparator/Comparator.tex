@@ -230,6 +230,102 @@ Path delay: $D = N\hat{f}+P = 7*3.88+14 = 41.16\tau = 6.86 NGD$
 \paragraph{Conclusion:}
 \
 
-Optimal stage numbers are: 1) $N=5$;  2) $N=7$.
+Optimal stage numbers are: 1) $N=5$ \ ($30.35\tau$);  2) $N=7$ \ ($41.16\tau$).
+
+\paragraph{Compare with the straightforward solution}
+\
+
+
+Let's imagine we didn't speculate on the amount of stages and made it extremely simple.
+
+\begin{circuitikz} \draw
+(0,2) node[xnor port] (myxnor) {}
+(2,1) node[nand port] (mynand) {}
+(4,0) node[nor port] (mynor) {}
+(myxnor.out) -| (mynand.in 1)
+(mynand.out) -| (mynor.in 1)
+;\end{circuitikz}
+(it's NAND4 in the middle)
+
+\paragraph{N=3, H=50}
+\
+
+The least delay: $\hat{f} = F^{\frac{1}{N}} = (666 \frac{2}{3})^{\frac{1}{3}} \approx 8.74\tau $
+
+Parasitic delay: $P = p_{XNOR} + p_{NAND4} + p_{NOR2} = 4 + 4 + 2 = 10\tau$
+
+Path delay: $D = N\hat{f}+P = 3*8.74+10 = 36.22\tau = 6.04 NGD$
+\paragraph{N=3, H=1000}
+\
+
+The least delay: $\hat{f} = F^{\frac{1}{N}} = (13333 \frac{1}{3})^{\frac{1}{3}} \approx 23.71\tau $
+
+Parasitic delay: $P = p_{XNOR} + p_{NAND4} + p_{NOR2} = 4 + 4 + 2 = 10\tau$
+
+Path delay: $D = N\hat{f}+P = 3*23.71+10 = 81.13\tau = 13.52 NGD$
+
+\paragraph{Conclusion:} our estimations were worth doing =)
+
+\paragraph{Calculation of scales}
+
+Now lets put scale for each stage.
+
+$\hat{f}=g_ih_i = g_Nh_N = g_Nb_N\frac{C_L}{g_N*s_N*C_{Gmin}} = \frac{H}{s_N} \ \rightarrow \ s_N=\frac{H}{\hat{f}}$
+
+$s_{i-1} = \frac{g_is_i}{\hat{f}}$
+
+
+
+\paragraph{H=50}
+
+Five stages:
+
+\begin{circuitikz} \draw
+(0,2) node[xnor port] (myxnor) {}
+(1,1.275) node[not port] (mynot1) {}
+(3,1) node[nand port] (mynand) {}
+(4,1) node[not port] (mynot2) {}
+(7,0) node[nor port] (mynor) {}
+(myxnor.out) -| (mynot1.in)
+(mynot.out) -| (mynand.in 1)
+(mynand.out) -| (mynot2.in)
+(mynot2.out) -| (mynor.in 1)
+;\end{circuitikz}
+
+$S_{NOR} = \frac{50}{3.67} = 13.6; \ S_{inv} = \frac{\frac{5}{3}*13.6}{3.67} = 6.2; \ S_{NAND4} = \frac{6.2}{3.67} = 1.68;$
+
+$S_{inv} = \frac{\frac{6}{3}*1.68}{3.67} = 0.92; \ S_{XNOR} = \frac{0.92}{3.67} = 0.25$
+
+\paragraph{H=1000}
+
+Seven stages:
+
+\begin{circuitikz} \draw
+(0,2) node[xnor port] (myxnor) {}
+(1,1.275) node[not port] (mynot1) {}
+(2.5,1.275) node[not port] (mynot2) {}
+(5,1) node[nand port] (mynand) {}
+(6,1) node[not port] (mynot3) {}
+(7.5,1) node[not port] (mynot4) {}
+(10,0) node[nor port] (mynor) {}
+(myxnor.out) -| (mynot1.in)
+(mynot1.out) -| (mynot2.in)
+(mynot2.out) -| (mynand.in 1)
+(mynand.out) -| (mynot3.in)
+(mynot3.out) -| (mynot4.in)
+(mynot4.out) -| (mynor.in 1)
+;\end{circuitikz}
+
+$S_{NOR} = \frac{1000}{3.88} = 257.7; \ S_{inv} = \frac{\frac{5}{3}*257.7}{3.88} = 110.7; \ S_{inv} = \frac{110.7}{3.88} = 28.5;$
+
+$S_{NAND4} = \frac{28.5}{3.88} = 7.35; \ S_{inv} = \frac{7.35}{3.88} = 3.8; \ S_{inv} = \frac{3.8}{3.88} = 0.98;$
+
+$S_{XNOR} = \frac{0.98}{3.88} = 0.25$
+
+\paragraph{Area of the circuit}
+
+Here we use the fact that the area is approximately proportional to the logical effort:
+
+$$\frac{G}{g_{NAND2}} \approx \frac{S}{s_{NAND2}} \ \rightarrow \ S = s_{NAND2}*\frac{G}{g_{NAND2}} = 5 \ sq \ mm \ * \frac{\frac{40}{3}}{\frac{4}{3}} = 50 \ sq \ mm$$
 
 \end{document}
