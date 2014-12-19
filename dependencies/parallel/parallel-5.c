@@ -68,7 +68,16 @@ int main(int argc, char **argv) {
     for (j = 2; j < my_task+2; ++j) {
       a[i][j] = sin(0.00001 * a[i - 1][j - 2]);
     }
-    MPI_Barrier(MPI_COMM_WORLD);
+    if (rank == size-1 && i < N-1) {
+      MPI_Recv((void*)a[i], 2, MPI_DOUBLE, rank-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    } else if (rank == 0 && i < N-1) {
+      MPI_Send((void*)(a[i]+my_task), 2, MPI_DOUBLE, rank+1, 0, MPI_COMM_WORLD);
+    } else if (rank == 0 || rank == size -1) {
+      continue;
+    } else if (i < N-1) {
+      MPI_Recv((void*)a[i], 2, MPI_DOUBLE, rank-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      MPI_Send((void*)(a[i]+my_task), 2, MPI_DOUBLE, rank+1, 0, MPI_COMM_WORLD);
+    }
   }
   
   end=MPI_Wtime();
