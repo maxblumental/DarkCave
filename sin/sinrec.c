@@ -6,7 +6,7 @@
 int main(int argc, char** argv) {
   
   if (argc!=4) {
-    printf("usage: $./a.out a b n_of_threads\n");
+    printf("Usage: $./a.out a b n_of_threads\n");
     return 0;
   }
 
@@ -24,7 +24,6 @@ int main(int argc, char** argv) {
   #pragma omp parallel for reduction(+:integral) private(i)
   for (i=0;i<N;i++) {
     integral += sin(1/(a+(b-a)*i/N))*((b-a)/N);
-   // fprintf(stderr, "%f\n", integral);
   }
 
   clock_t t2 = clock();
