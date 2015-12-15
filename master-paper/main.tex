@@ -1,0 +1,222 @@
+\documentclass[12pt]{extarticle}
+
+\usepackage{wrapfig}
+\usepackage{indentfirst}
+\usepackage{textcomp}
+\usepackage{lipsum} % Package to generate dummy text throughout this template
+
+\usepackage[sc]{mathpazo} % Use the Palatino font
+\usepackage[T1,T2A]{fontenc} % Use 8-bit encoding that has 256 glyphs
+\linespread{1.05} % Line spacing - Palatino needs more space between lines
+\usepackage{microtype} % Slightly tweak font spacing for aesthetics
+\usepackage{amsmath,amssymb}
+\usepackage[utf8]{inputenc}
+\usepackage[russian,english]{babel}
+\usepackage{stackengine}
+\newlength\llength
+\usepackage{listings}
+\usepackage{color}
+%some color definitions
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+%programming language settings
+\lstset{frame=tb,
+  language=C++,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+%%
+\usepackage[hang, small,labelfont=bf,up,textfont=it,up]{caption} % Custom captions under/above floats in tables or figures
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs} % Horizontal rules in tables
+\usepackage{float} % Required for tables and figures in the multi-column environment - they need to be placed in specific locations with the [H] (e.g. \begin{table}[H])
+\usepackage{hyperref} % For hyperlinks in the PDF
+
+\usepackage{lettrine} % The lettrine is the first enlarged letter at the beginning of the text
+\usepackage{paralist} % Used for the compactitem environment which makes bullet points with less space between them
+
+\addto{\captionsenglish}{\renewcommand{\contentsname}{Содержание}}
+
+\addto{\captionsenglish}{\renewcommand{\abstractname}{}}
+
+\addto{\captionsenglish}{\renewcommand{\refname}{Список ссылок}}
+
+\addto{\captionsenglish}{\renewcommand{\lstlistingname}{Листинг}}
+
+\addto{\captionsenglish}{\renewcommand{\lstlistlistingname}{Листинги}
+}
+
+\addto{\captionsenglish}{\renewcommand{\listfigurename}{Список иллюстраций}
+}
+
+\addto{\captionsenglish}{\renewcommand{\figurename}{Рис.}
+}
+
+%%package for tables
+\usepackage[table,xcdraw]{xcolor}
+%%page margins
+\usepackage
+[
+        a4paper,% other options: a3paper, a5paper, etc
+       	left=3cm,
+        % use vmargin=2cm to make vertical margins equal to 2cm.
+        % us  hmargin=3cm to make horizontal margins equal to 3cm.
+        % use margin=3cm to make all margins  equal to 3cm.
+]
+{geometry}
+
+\usepackage{pdfpages}
+
+\begin{document}
+
+\includepdf[pages={1}]{master_paper_title.pdf}
+
+%----------------------------------------------------------------------------------------
+%	ABSTRACT
+%----------------------------------------------------------------------------------------
+
+\begin{abstract}
+
+\noindent В этой работе я рассматриваю проблему поддержания ясной структуры кода в проектах по разработке ПО для мобильных устройств на платформе Android, использующих библиотеку ReactiveX, предназначенную для асинхронной обработки потоков событий.
+
+\end{abstract}
+
+%----------------------------------------------------------------------------------------
+%	ARTICLE CONTENTS
+%----------------------------------------------------------------------------------------
+
+\tableofcontents
+
+\clearpage
+
+\section{Введение}
+
+\subsection{ReactiveX для Android}
+С появлением библиотеки ReactiveX у разработчиков Android появилась альтернатива в решении задачи асинхронного исполнения некоторой операции, такой как передача данных по сети, обращение в БД и тому подобных действий, требущих времени и способных замедлить реакцию UI при исполнении на главном потоке. 
+
+Эта библиотека предоставляет API для асинхронного программирования. При этом разработчик работает с абстракциями, напоминающими паттерн объетно-ориентированного дизайна Observer, то есть с источниками событий (Observable) и их наблюдателями (Subscriber), которые оповещаются источниками при наступлении интересующих их событий.
+
+Кроме того, работа с потоками событий проводится в удобном функциональном стиле, посредством различных операторов, напоминающих Java 8 Stream API.
+
+\subsection{Альтернативы}
+
+До появления ReactiveX единственным средством асинхронного программирования были классы \texttt{AsyncTask} для асинхронных задач в общем и \texttt{Loader} для загрузки данных для \texttt{Activity} и \texttt{Fragment}, при использовании которых, однако, возникали некоторые трудности, приводящие к довольно сложным решениям: например, обработка ошибок, тестирование, композиция нескольких асинхронных задач.
+
+\subsection{Почему ReactiveX}
+
+Рассмотрим аспекты работы с асинхронными операциями на примере:
+
+\begin{lstlisting}
+private class CallWebServiceTask extends AsyncTask<String, Result, Void> {
+  protected Result doInBackground(String... someData) {
+    Result result = webService.doSomething(someData);
+    return result;
+  }
+  protected void onPostExecute(Result result) {
+    if (result.isSuccess() {
+      resultText.setText("It worked!");
+    }
+  }
+}
+\end{lstlisting}
+
+\subsubsection{Обработка ошибок}
+
+Первая  проблема, возникающая при работе с \texttt{AsyncTask}: "Что случится, если что-то пойдет не так?" К сожалению, для этого случая нет решения "из коробки", поэтому в конечном счете большинство разработчиков приходят к решению отнаследоваться от \texttt{AsyncTask}, обернуть \texttt{doInBackground()} в \texttt{try/catch} блок, возвращая пару \texttt{<TResult, Exception>} и передавая её методам вроде \texttt{onSuccess()} и \texttt{onError()} в зависимости от исхода.
+
+Таким образом, разработчик должен импортировать дополнительный код для каждого своего проекта. Этот вручную написанный код кочует со временем и возможно станет несовместимым и непредсказуемым при переходе от разработчика к разработчику, от проекта к проекту.
+
+Рассмотрим решение этой проблемы в ReactiveX. Вот код аналогичный вышеприведенному:
+
+\begin{lstlisting}
+webService.doSomething(someData)
+          .observeOn(AndroidSchedulers.mainThread())
+          .subscribe(
+              result -> resultText.setText("It worked!"),
+              e -> handleError(e));
+\end{lstlisting}
+
+Как можно видеть, можно обрабатывать обе ситуации, затрачивая на это мало кода.
+
+\subsubsection{Множественные вызовы к разным web-сервисам}
+
+Допустим, что необходимо сделать несколько запросов по сети друг за другом, каждый bp  использует результат предыдущего. Или же необходимо сделать несколько запросов параллельно, улучшая производительность, после чего соединить результаты запросов перед передачей их потоку UI.
+
+Для последовательного исполнения приходится либо работать со сложными вложенными call-back'ами, оставляя при этом \texttt{AsyncTask}'и независимыми, либо запускать их синхронно в одном побочном потоке, копируя код при их упорядочивании в разных ситуациях.
+
+Для параллельного исполнения приходится использовать вручную написанные \texttt{Executor}'ы, так как по умолчанию \texttt{AsyncTask}'и не работатют параллельно.
+Для координации действий потоков придется прибегнуть к сложным приемам синхронизации, использующим вещи вроде \texttt{CountDownLatchs}, \texttt{Threads}, \texttt{Executors} и \texttt{Futures}.
+
+Вот пример на ReactiveX:
+
+\
+
+\begin{lstlisting}
+public Observable<List<Weather>> getWeatherForLargeUsCapitals() {
+  return cityDirectory.getUsCapitals()
+                      .flatMap(cityList -> Observable.from(cityList))
+                      .filter(city -> city.getPopulation() > 500,000)
+                      .flatMap(city -> weatherService.getCurrentWeather(city))
+                      .toSortedList((cw1,cw2) -> cw1.getCityName().compare(cw2.getCityName()));
+}
+\end{lstlisting}
+
+Здесь можно видеть последовательные зависимые друг от друга вызовы сервисов. При этом получение погоды для данного города идет параллельно в некотором \texttt{thread pool}. После этого результаты собираются и сортируются.
+
+\subsubsection{Тестирование}
+
+Тестирование \texttt{AsyncTask} также требует непростых "ручных" решений, хрупких и/или сложных в поддержке.
+
+Observable дают нам простой способ сделать асинхронный вызов синхронным. Все, что нужно сделать, это использовать метод \texttt{.toBlocking()}:
+
+\begin{lstlisting}
+List results = getWeatherForLargeUsCapitals().toBlocking().first();
+assertEquals(12, results.size());
+\end{lstlisting}
+
+И это все. Не нужно "усыплять" потоки, использовать сложные вещи вроде \texttt{Futures} или \texttt{CountDownLatchs}.
+
+\subsection{Проблема}
+Многие команды, использующие данную библиотеку, отмечают, что несмотря на удобные с точки зрения написания кода абстракции и возмож
+ности этой библиотеки, с ростом количества кода в проекте возрастает сложность понимания этого кода. Разработчики с трудом понимают код друг друга, не говоря уже о привлечении новых сотрудников к проекту.
+
+\subsection{Задача}
+
+В связи с этим я хочу разработать методологию использования этой библиотеки, следуя которой можно будет поддерживать ясную структуру кода.
+
+\begin{thebibliography}{9}
+  
+\bibitem{rx-wiki}
+	RxJava project wiki,
+    \href{https://github.com/ReactiveX/RxJava/wiki}{github.com}.
+  
+\bibitem{habr-gis}
+	Блог компании 2GIS,
+    \href{http://habrahabr.ru/company/2gis/blog/228125/}{habrahabr.ru},
+    Реактивное программирование под Android,
+    2014.
+    
+\bibitem{stable-kernel}
+	Блог компании Stable kernel,
+    \href{http://blog.stablekernel.com/replace-asynctask-asynctaskloader-rx-observable-rxjava-android-patterns/}{blog.stablekernel.com},
+    Replace AsyncTask and AsyncTaskLoader with Rx.Observable – RxJava Android patterns,
+    2014.
+    
+
+
+\end{thebibliography}
+
+\end{document}
